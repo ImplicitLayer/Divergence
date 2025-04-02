@@ -33,14 +33,29 @@ def black_scholes(S, K, T, r, sigma, option_type="call"):
 def binomial_tree(S, K, T, r, sigma, N, option_type="call"):
     """
     Calculate option price using the Binomial Tree model.
+
+    Parameters:
+    S : float  -> Current stock price
+    K : float  -> Strike price
+    T : float  -> Time to expiration (in years)
+    r : float  -> Risk-free interest rate (annualized)
+    sigma : float  -> Volatility of the underlying asset
+    N : int  -> Number of time steps in the binomial tree
+    option_type : str  -> "call" or "put"
+
+    Returns:
+    float: Option price
     """
+
     dt = T / N
     u = np.exp(sigma * np.sqrt(dt))
     d = 1 / u
     p = (np.exp(r * dt) - d) / (u - d)
 
+    # Initialize option values at maturity
     option_values = np.maximum(0, (S * u ** np.arange(N, -1, -1) * d ** np.arange(0, N + 1) - K))
 
+    # Backward induction for option pricing
     for _ in range(N):
         option_values = np.exp(-r * dt) * (p * option_values[:-1] + (1 - p) * option_values[1:])
 
@@ -51,6 +66,18 @@ def binomial_tree(S, K, T, r, sigma, N, option_type="call"):
 def monte_carlo(S, K, T, r, sigma, num_simulations=10000, option_type="call"):
     """
     Calculate option price using Monte Carlo simulation.
+
+    Parameters:
+    S : float  -> Current stock price
+    K : float  -> Strike price
+    T : float  -> Time to expiration (in years)
+    r : float  -> Risk-free interest rate (annualized)
+    sigma : float  -> Volatility of the underlying asset
+    num_simulations : int  -> Number of simulations to run
+    option_type : str  -> "call" or "put"
+
+    Returns:
+    float: Option price
     """
     np.random.seed(42)
     Z = np.random.standard_normal(num_simulations)
@@ -64,23 +91,51 @@ def monte_carlo(S, K, T, r, sigma, num_simulations=10000, option_type="call"):
     return np.exp(-r * T) * np.mean(payoff)
 
 
-# Local volatility model (placeholder, needs surface interpolation)
+# Local volatility model (placeholder)
 def local_volatility(S, K, T, r, sigma_surface, option_type="call"):
     """
     Local volatility pricing using an interpolated volatility surface.
 
     Placeholder function. Requires a volatility surface model.
+
+    Parameters:
+    S : float  -> Current stock price
+    K : float  -> Strike price
+    T : float  -> Time to expiration (in years)
+    r : float  -> Risk-free interest rate (annualized)
+    sigma_surface: object  -> An object with a method get_volatility(S,T)
+    option_type: str  -> "call" or "put"
+
+    Returns:
+    float: Option price based on local volatility.
     """
-    sigma = sigma_surface.get_volatility(S, T)  # Assume a callable object
+
+    sigma = sigma_surface.get_volatility(S, T)
     return black_scholes(S, K, T, r, sigma, option_type)
 
 
 # Stochastic volatility model (Heston model placeholder)
-def stochastic_volatility(S, K, T, r, v0, kappa, theta, sigma, rho, option_type="call"):
+def stochastic_volatility(S, K, T, r, v0, kappa, theta, sigma,
+                          rho=0.0, option_type="call"):
     """
     Stochastic volatility pricing using Heston model.
 
     Placeholder function. Requires numerical solution.
+
+    Parameters:
+    S: float  -> Current stock price
+    K: float  -> Strike price
+    T: float  -> Time to expiration (in years)
+    r: float  -> Risk-free interest rate (annualized)
+    v0: float  -> Initial variance
+    kappa: float  -> Rate of mean reversion
+    theta: float  -> Long-run average variance
+    sigma_heston: float  -> Volatility of variance process
+    rho: float  -> Correlation between asset and variance processes
+    option_type: str -> call" or "put"
+
+    Returns:
+    float: Option price based on stochastic volatility.
     """
     # Monte Carlo simulation for Heston Model (simplified)
     num_simulations = 10000
@@ -100,12 +155,3 @@ def stochastic_volatility(S, K, T, r, v0, kappa, theta, sigma, rho, option_type=
         payoff = np.maximum(K - S_sim, 0)
 
     return np.exp(-r * T) * np.mean(payoff)
-
-
-# Example usage
-if __name__ == "__main__":
-    S, K, T, r, sigma = 100, 100, 1, 0.05, 0.2
-
-    print("Black-Scholes Call Price:", black_scholes(S, K, T, r, sigma, "call"))
-    print("Binomial Tree Call Price:", binomial_tree(S, K, T, r, sigma, 100, "call"))
-    print("Monte Carlo Call Price:", monte_carlo(S, K, T, r, sigma, 10000, "call"))
